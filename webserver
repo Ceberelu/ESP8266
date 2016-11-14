@@ -1,0 +1,53 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+ 
+const char* ssid = "myssid";
+const char* password = "mypass";
+
+const unsigned int seconds = 1000000;
+const unsigned int sleep_time_s = 10 * seconds;
+
+// HTTP server will listen at port 80
+ESP8266WebServer server(80);
+
+void handle_adc() {
+  float val = analogRead(A0);
+  server.send(200, "text/plain", String(val));
+}
+ 
+void setup(void) {
+  Serial.begin(115200);
+  Serial.println("");
+  pinMode(A0, INPUT);
+  
+  // Connect to WiFi network
+  WiFi.begin(ssid, password);
+  
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  
+  Serial.println("");
+  Serial.print("Connected to ");
+  Serial.println(ssid);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", [](){
+   server.send(200, "text/html", "Go to ADC");
+  });
+  
+  // And as regular external functions:
+  server.on("/adc", handle_adc);
+
+  // Start the server 
+  server.begin();
+  Serial.println("HTTP server started");
+}
+ 
+void loop(void) {
+  // check for incomming client connections frequently in the main loop:
+  server.handleClient();
+}
